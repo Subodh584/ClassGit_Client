@@ -5,13 +5,18 @@ import toast from "react-hot-toast";
 import { Toaster } from "react-hot-toast";
 
 export default function Explorer() {
+  const [canUnlinkRepo, setCanUnlinkRepo] = useState(true);
+  const [fetchedReviews, setFetchedReviews] = useState([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedReviewId, setSelectedReviewId] = useState("");
+
   const navigate = useNavigate();
   const location = useLocation();
   const { assId } = location.state || {};
   const userEmail = localStorage.getItem("Email");
 
-  const token = process.env.TOKEN_KEY;
-
+  const token = import.meta.env.VITE_TOKEN_KEY;
   const [flag, setFlag] = useState(true);
   const [directoryTree, setDirectoryTree] = useState([]);
   const [currentPath, setCurrentPath] = useState("");
@@ -260,6 +265,32 @@ export default function Explorer() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(()=>{
+    const fetchIsSubmited = async () => {
+      try {
+        const response = await axios.post(
+          "http://localhost:3000/is-submited-for-review",
+          {
+            assId: assId,
+            userEmail: userEmail,
+          }
+        );
+        response.data.map((item) => {
+          if (item.completetion_status === "Completed") {
+            setCanUnlinkRepo(false);
+          }
+        });
+        console.log(response.data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    fetchIsSubmited();
+    
+
+
+  },[selectedReviewId]);
+
   // Get theme-specific styles
   const getThemeStyles = () => {
     if (darkMode) {
@@ -310,6 +341,7 @@ export default function Explorer() {
   };
 
   const handleUnlinkRepo = async () => {
+    if(canUnlinkRepo) {
     try {
       const response = await axios.post("http://localhost:3000/unlink-repo", {
         assId: assId,
@@ -322,8 +354,47 @@ export default function Explorer() {
       console.error(err);
       toast.error("Error unlinking repo!");
     }
-  };
+  }else{
+    toast.error("You cannot unlink the repo after submitting the assignment!");
+    }
+  }
   
+
+  const handleSubmitAssignment = async () => {
+    try {
+      const response = await axios.post("http://localhost:3000/fetch-reviews", {
+        assId: assId,
+        userEmail: userEmail,
+      });
+      console.log(response.data);
+      setFetchedReviews(response.data);
+      setLoadingOptions(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Error Fetching reviews!");
+      setLoadingOptions(false);
+    }
+
+    setLoadingOptions(false);
+    setMenuOpen(false);
+    setShowReviewModal(true);
+  };
+
+  // Simulate review data
+  const reviews = [
+    {
+      id: "rev1",
+      name: "Review 1",
+      description: "Initial draft check",
+      totalMarks: 10,
+    },
+    {
+      id: "rev2",
+      name: "Review 2",
+      description: "Final submission review",
+      totalMarks: 20,
+    },
+  ];
 
   return (
     <div style={{ ...styles.container, ...themeStyles.container }}>
@@ -434,6 +505,20 @@ export default function Explorer() {
                 >
                   Unlink Repository
                 </button>
+                <button
+                  onClick={handleSubmitAssignment}
+                  style={{
+                    width: "100%",
+                    padding: "10px 16px",
+                    background: "none",
+                    border: "none",
+                    textAlign: "left",
+                    color: darkMode ? "#34A56F" : "#34A56F",
+                    cursor: "pointer",
+                  }}
+                >
+                  Submit_Assignment
+                </button>
               </div>
             )}
           </div>
@@ -542,6 +627,180 @@ export default function Explorer() {
           )}
         </div>
       </div>
+      {showReviewModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 10000,
+          }}
+        >
+          <div
+            style={{
+              background: darkMode ? "#222" : "#fff",
+              padding: "24px",
+              borderRadius: "10px",
+              width: "360px",
+              textAlign: "center",
+              boxShadow: "0px 4px 12px rgba(0,0,0,0.3)",
+              color: darkMode ? "#fff" : "#000",
+            }}
+          >
+            <h3>Select review to submit assignment for</h3>
+            {fetchedReviews.find(
+              (r) => r.configid === parseInt(selectedReviewId)
+            )?.completion_status === "Not Completed" && 
+            <h5
+              style={{ color: "red", fontSize: "13px", marginBottom: "10px" }}
+            >
+              ⚠️ Once submitted, you cannot unsubmit the assignment for this
+              review. Please confirm carefully.
+            </h5>}
+
+            <select
+              value={selectedReviewId}
+              onChange={(e) => setSelectedReviewId(e.target.value)}
+              style={{
+                padding: "10px",
+                marginTop: "12px",
+                width: "100%",
+                borderRadius: "5px",
+                border: "1px solid #ccc",
+                backgroundColor: darkMode ? "#333" : "#fff", // Dark mode background
+                color: darkMode ? "#fff" : "#000", // Text color
+              }}
+            >
+              <option value="">-- Select Review --</option>
+              {loadingOptions ? (
+                <option disabled>Loading...</option>
+              ) : (
+                fetchedReviews.map((review) => (
+                  <option key={review.configid} value={review.configid}>
+                    {review.review_number +
+                      (review.review_number === 1
+                        ? "st review"
+                        : review.review_number === 2
+                        ? "nd review"
+                        : review.review_number === 3
+                        ? "rd review"
+                        : "th review")}{" "}
+                    (Marks: {review.total_marks})
+                  </option>
+                ))
+              )}
+            </select>
+
+            {selectedReviewId && (
+              <p
+                style={{
+                  marginTop: "10px",
+                  fontSize: "14px",
+                  color: darkMode ? "#bbb" : "#444",
+                }}
+              >
+                {
+                  fetchedReviews.find(
+                    (r) => r.configid === parseInt(selectedReviewId)
+                  )?.review_description
+                }
+              </p>
+            )}
+
+            {fetchedReviews.find(
+              (r) => r.configid === parseInt(selectedReviewId)
+            )?.completion_status === "Completed" && (
+              <span
+                style={{
+                  color: "red",
+                  fontSize: "14px",
+                  marginTop: "8px",
+                  display: "block",
+                }}
+              >
+                This review is already completed!
+              </span>
+            )}
+
+            <div style={{ marginTop: "20px" }}>
+              <button
+                onClick={async () => {
+                  if (!selectedReviewId) return;
+                  const selectedReview = fetchedReviews.find(
+                    (r) => r.configid === parseInt(selectedReviewId)
+                  );
+                  console.log("Submitting assignment for:", selectedReviewId);
+                  setCanUnlinkRepo(false);
+                  try {
+                    const response = await axios.post(
+                      "http://localhost:3000/submited-for-review",
+                      {
+                        assId: assId,
+                        userEmail: userEmail,
+                        reviewId: selectedReviewId,
+                      }
+                    );
+                    toast.success("Assignment submitted for review!");
+                  } catch (err) {
+                    console.error(err);
+                    toast.error("Error submitting assignment for review!");
+                  }
+                  setShowReviewModal(false);
+                }}
+                disabled={
+                  !selectedReviewId ||
+                  fetchedReviews.find(
+                    (r) => r.configid === parseInt(selectedReviewId)
+                  )?.completion_status === "Completed"
+                }
+                style={{
+                  padding: "10px 16px",
+                  backgroundColor:
+                    !selectedReviewId ||
+                    fetchedReviews.find(
+                      (r) => r.configid === parseInt(selectedReviewId)
+                    )?.completion_status === "Completed"
+                      ? "#999"
+                      : "#34A56F",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor:
+                    !selectedReviewId ||
+                    fetchedReviews.find(
+                      (r) => r.configid === parseInt(selectedReviewId)
+                    )?.completion_status === "Completed"
+                      ? "not-allowed"
+                      : "pointer",
+                  marginRight: "10px",
+                }}
+              >
+                Confirm
+              </button>
+
+              <button
+                onClick={() => setShowReviewModal(false)}
+                style={{
+                  padding: "10px 16px",
+                  backgroundColor: "#ccc",
+                  color: "#333",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -28,6 +28,7 @@ import {
   LogOut,
   Search,
 } from "lucide-react";
+import { toast } from "sonner";
 
 // Animation variants
 const containerVariants = {
@@ -671,14 +672,26 @@ const CreateAssignmentTab = () => {
   }
 
   return loading ? (
-    sendMail ? (
-      <div>
-        <h1>Creating Assignment...</h1>
-        <h1>Sending Emails...</h1>
-      </div>
-    ) : (
-      <h1>Creating Assignment...</h1>
-    )
+    <>
+      {sendMail ? (
+        <div className="flex justify-center items-center py-6">
+          <motion.div
+            className="h-12 w-12 border-4 border-gray-200 border-t-blue-600 rounded-full"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          ></motion.div>
+        </div>
+      ) : (
+        <div className="flex justify-center items-center py-6">
+          <motion.div
+            className="h-12 w-12 border-4 border-gray-200 border-t-blue-600 rounded-full"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          ></motion.div>
+        </div>
+      )}
+      {toast.success("Assignment created successfully")}
+    </>
   ) : (
     <motion.div
       initial={{ opacity: 0 }}
@@ -839,7 +852,7 @@ const CreateAssignmentTab = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description
+            Assignment Description
           </label>
           <textarea
             onChange={handleDescription}

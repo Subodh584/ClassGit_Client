@@ -183,9 +183,30 @@ const StatCard = ({ value, label, color, icon }) => {
 
 // Assignment card with animations
 const AssignmentCard = ({ assignment, setActiveTab2 }) => {
+  const [progRatio,setProgRatio] = useState("0/0");
   const navigate = useNavigate();
   const submissionPercentage = assignment.progress;
   // Function to determine team status badge color
+
+  useEffect(() => {
+    const fetchProgress = async () => {
+      try {
+        const response = await axios.post(
+          "http://localhost:3000/dashboard-data-progress",
+          {
+            userEmail: localStorage.getItem("Email"),
+            assId: assignment.id,
+          }
+        );
+        setProgRatio(`${response.data[0].reviews_done}/${response.data[0].reviews_total}`);
+        console.log(response.data[0]);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchProgress();
+  }, []);
+
   const getTeamStatusColor = (status) => {
     switch (status) {
       case "Team Complete":
@@ -210,39 +231,44 @@ const AssignmentCard = ({ assignment, setActiveTab2 }) => {
         return "bg-gray-100 text-gray-700";
     }
   };
-  const handleViewDetail = ()=>{
-    navigate("/team-detail",{state:{
-      "assId":assignment.id,
-    }});
-  }
+  const handleViewDetail = () => {
+    navigate("/team-detail", {
+      state: {
+        assId: assignment.id,
+      },
+    });
+  };
 
-  const handleWorkSpace = ()=>{
+  const handleWorkSpace = () => {
+    const checkRepoConnectivity = async () => {
+      try {
+        const response = await axios.post(
+          "http://localhost:3000/checkRepoConnectivity",
+          {
+            assId: assignment.id,
+            userEmail: localStorage.getItem("Email"),
+          }
+        );
 
-    const checkRepoConnectivity = async()=>{
-      try{
-        const response = await axios.post("http://localhost:3000/checkRepoConnectivity",{
-          "assId":assignment.id,
-          "userEmail":localStorage.getItem("Email")
-        })
-        
-        if(response.data[0].repo_status === "Not Connected"){
-          navigate("/repo-form",{state:{
-            "assId":assignment.id,
-          }});
-
-        }else {
-          navigate("/classgit-explorer",{state:{
-            "assId":assignment.id,
-          }});
+        if (response.data[0].repo_status === "Not Connected") {
+          navigate("/repo-form", {
+            state: {
+              assId: assignment.id,
+            },
+          });
+        } else {
+          navigate("/classgit-explorer", {
+            state: {
+              assId: assignment.id,
+            },
+          });
         }
-      }catch(err){
+      } catch (err) {
         console.error(err);
       }
-    }
+    };
     checkRepoConnectivity();
-    
-  }
-
+  };
 
   return (
     <motion.div
@@ -336,7 +362,9 @@ const AssignmentCard = ({ assignment, setActiveTab2 }) => {
 
       <div className="mt-4">
         <div className="flex justify-between items-center mb-1">
-          <span className="text-sm text-gray-600">Progress</span>
+          <span className="text-sm text-gray-600">
+            Progress - {progRatio} reviews completed.
+          </span>
           <span className="text-sm text-gray-600">{assignment.progress}%</span>
         </div>
         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -358,7 +386,7 @@ const AssignmentCard = ({ assignment, setActiveTab2 }) => {
       </div>
       <div className="mt-4 flex flex-col sm:flex-row justify-end items-center gap-2">
         <motion.button
-        onClick={handleViewDetail}
+          onClick={handleViewDetail}
           className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm w-full sm:w-auto justify-center sm:justify-start"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -390,7 +418,7 @@ const AssignmentCard = ({ assignment, setActiveTab2 }) => {
         )}
         {assignment.teamstatus === "Team Complete" && (
           <motion.button
-          onClick={handleWorkSpace}
+            onClick={handleWorkSpace}
             className="flex items-center space-x-1 bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-md text-sm w-full sm:w-auto justify-center sm:justify-start"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -932,7 +960,7 @@ const EnhancedCalendarWidget = () => {
 // Component for Assignments Tab
 const AssignmentsTab = ({ setActiveTab1 }) => {
   const [assignments, setAssignments] = useState([]);
-  const [ids,setIds] = useState([]);
+  const [ids, setIds] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -943,7 +971,7 @@ const AssignmentsTab = ({ setActiveTab1 }) => {
             userEmail: localStorage.getItem("Email"),
           }
         );
-        setIds(response.data.map(item => item.id));
+        setIds(response.data.map((item) => item.id));
         setAssignments(response.data);
       } catch (error) {
         console.error("Error fetching assignments:", error);
@@ -951,9 +979,6 @@ const AssignmentsTab = ({ setActiveTab1 }) => {
     };
     fetchData();
   }, []);
-
-
-  
 
   return (
     <motion.div
@@ -1178,43 +1203,39 @@ const TeamsTab = () => {
 
     const handleConfirmSendRequest = async (flag) => {
       if (!confirmingStudent) return;
-      if (flag === 1){
-      try {
-        setIsSubmitting(true);
-        setSelectedStudents([...selectedStudents, confirmingStudent]);
-        setShowConfirmation(false);
-        setConfirmingStudent(null);
-      } catch (error) {
-        console.error("Error sending invitation:", error);
-      } finally {
-        setIsSubmitting(false);
+      if (flag === 1) {
+        try {
+          setIsSubmitting(true);
+          setSelectedStudents([...selectedStudents, confirmingStudent]);
+          setShowConfirmation(false);
+          setConfirmingStudent(null);
+        } catch (error) {
+          console.error("Error sending invitation:", error);
+        } finally {
+          setIsSubmitting(false);
+        }
+      } else {
+        try {
+          setIsSubmitting(true);
+          await axios.post("http://localhost:3000/send-team-invitation", {
+            senderEmail: localStorage.getItem("Email"),
+            recipientEmail: confirmingStudent.email,
+            projectName,
+            teamName,
+            maxSize: maxTeamSize1,
+            assignmentId: assignmentId,
+            teamId: teamId,
+          });
+          // Add student to selected list
+          setSelectedStudents([...selectedStudents, confirmingStudent]);
+          setShowConfirmation(false);
+          setConfirmingStudent(null);
+        } catch (error) {
+          console.error("Error sending invitation:", error);
+        } finally {
+          setIsSubmitting(false);
+        }
       }
-    }else{
-      try {
-        setIsSubmitting(true);
-        await axios.post("http://localhost:3000/send-team-invitation", {
-          senderEmail: localStorage.getItem("Email"),
-          recipientEmail: confirmingStudent.email,
-          projectName,
-          teamName,
-          maxSize: maxTeamSize1,
-          assignmentId:assignmentId,
-          teamId:teamId
-        });
-        // Add student to selected list
-        setSelectedStudents([...selectedStudents, confirmingStudent]);
-        setShowConfirmation(false);
-        setConfirmingStudent(null);
-      } catch (error) {
-        console.error("Error sending invitation:", error);
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
-    
-    
-    
-    
     };
 
     const RenderCardView = ({ teamId }) => {
@@ -1418,7 +1439,9 @@ const TeamsTab = () => {
                     <div className="flex space-x-3">
                       <button
                         className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
-                        onClick={()=>{handleConfirmSendRequest(-1)}}
+                        onClick={() => {
+                          handleConfirmSendRequest(-1);
+                        }}
                         disabled={isSubmitting}
                       >
                         {isSubmitting ? "Sending..." : "Yes, Send Invitation"}
@@ -1502,14 +1525,14 @@ const TeamsTab = () => {
           assignmentId: assignmentId,
         });
 
-        toast.success("Team Created Successfully!")
+        toast.success("Team Created Successfully!");
         setTimeout(() => {
           window.location.reload();
         }, 1000);
 
         if (onSubmit) onSubmit();
       } catch (error) {
-        toast.error("Failed to create team. Please try again.")
+        toast.error("Failed to create team. Please try again.");
       } finally {
         setIsSubmitting(false);
       }
@@ -1552,7 +1575,9 @@ const TeamsTab = () => {
             <div className="flex space-x-3">
               <button
                 className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
-                onClick={()=>{handleConfirmSendRequest(1)}}
+                onClick={() => {
+                  handleConfirmSendRequest(1);
+                }}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Sending..." : "Yes, Send Invitation"}
@@ -2149,7 +2174,7 @@ const StudentDashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-    <Toaster position="top-center" reverseOrder={false} />
+      <Toaster position="top-center" reverseOrder={false} />
       {/* Overlay for mobile menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
