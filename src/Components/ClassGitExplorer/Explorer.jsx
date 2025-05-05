@@ -265,7 +265,7 @@ export default function Explorer() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(()=>{
+  useEffect(() => {
     const fetchIsSubmited = async () => {
       try {
         const response = await axios.post(
@@ -280,16 +280,12 @@ export default function Explorer() {
             setCanUnlinkRepo(false);
           }
         });
-        console.log(response.data);
       } catch (error) {
         console.error(error);
       }
-    }
+    };
     fetchIsSubmited();
-    
-
-
-  },[selectedReviewId]);
+  }, [selectedReviewId]);
 
   // Get theme-specific styles
   const getThemeStyles = () => {
@@ -341,24 +337,25 @@ export default function Explorer() {
   };
 
   const handleUnlinkRepo = async () => {
-    if(canUnlinkRepo) {
-    try {
-      const response = await axios.post("http://localhost:3000/unlink-repo", {
-        assId: assId,
-        userEmail: userEmail,
-      });
-      toast.success("Unlink Successful!");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      navigate("/student-dashboard");
-    } catch (err) {
-      console.error(err);
-      toast.error("Error unlinking repo!");
+    if (canUnlinkRepo) {
+      try {
+        const response = await axios.post("http://localhost:3000/unlink-repo", {
+          assId: assId,
+          userEmail: userEmail,
+        });
+        toast.success("Unlink Successful!");
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        navigate("/student-dashboard");
+      } catch (err) {
+        console.error(err);
+        toast.error("Error unlinking repo!");
+      }
+    } else {
+      toast.error(
+        "You cannot unlink the repo after submitting the assignment!"
+      );
     }
-  }else{
-    toast.error("You cannot unlink the repo after submitting the assignment!");
-    }
-  }
-  
+  };
 
   const handleSubmitAssignment = async () => {
     try {
@@ -366,8 +363,8 @@ export default function Explorer() {
         assId: assId,
         userEmail: userEmail,
       });
-      console.log(response.data);
       setFetchedReviews(response.data);
+      console.log(response.data);
       setLoadingOptions(false);
     } catch (err) {
       console.error(err);
@@ -656,13 +653,14 @@ export default function Explorer() {
             <h3>Select review to submit assignment for</h3>
             {fetchedReviews.find(
               (r) => r.configid === parseInt(selectedReviewId)
-            )?.completion_status === "Not Completed" && 
-            <h5
-              style={{ color: "red", fontSize: "13px", marginBottom: "10px" }}
-            >
-              ⚠️ Once submitted, you cannot unsubmit the assignment for this
-              review. Please confirm carefully.
-            </h5>}
+            )?.completion_status === "Not Completed" && (
+              <h5
+                style={{ color: "orange", fontSize: "13px", marginBottom: "10px" }}
+              >
+                ⚠️ Once submitted, you cannot unsubmit the assignment for this
+                review. Please confirm carefully.
+              </h5>
+            )}
 
             <select
               value={selectedReviewId}
@@ -715,17 +713,32 @@ export default function Explorer() {
 
             {fetchedReviews.find(
               (r) => r.configid === parseInt(selectedReviewId)
-            )?.completion_status === "Completed" && (
+            )?.completion_status === "Completed" ? (
               <span
                 style={{
-                  color: "red",
+                  color: "green",
                   fontSize: "14px",
                   marginTop: "8px",
                   display: "block",
                 }}
               >
-                This review is already completed!
+                {"This review is already completed!"}
               </span>
+            ) : (
+              fetchedReviews.find(
+                (r) => r.configid === parseInt(selectedReviewId)
+              )?.review_deadline === null && (
+                <span
+                  style={{
+                    color: "orange",
+                    fontSize: "14px",
+                    marginTop: "8px",
+                    display: "block",
+                  }}
+                >
+                  {"Once the teacher permits you may submit this review."}
+                </span>
+              )
             )}
 
             <div style={{ marginTop: "20px" }}>
@@ -735,7 +748,6 @@ export default function Explorer() {
                   const selectedReview = fetchedReviews.find(
                     (r) => r.configid === parseInt(selectedReviewId)
                   );
-                  console.log("Submitting assignment for:", selectedReviewId);
                   setCanUnlinkRepo(false);
                   try {
                     const response = await axios.post(
@@ -757,25 +769,34 @@ export default function Explorer() {
                   !selectedReviewId ||
                   fetchedReviews.find(
                     (r) => r.configid === parseInt(selectedReviewId)
-                  )?.completion_status === "Completed"
+                  )?.completion_status === "Completed" ||
+                  fetchedReviews.find(
+                    (r) => r.configid === parseInt(selectedReviewId)
+                  )?.review_deadline === null
                 }
                 style={{
                   padding: "10px 16px",
                   backgroundColor:
-                    !selectedReviewId ||
-                    fetchedReviews.find(
-                      (r) => r.configid === parseInt(selectedReviewId)
-                    )?.completion_status === "Completed"
+                  !selectedReviewId ||
+                  fetchedReviews.find(
+                    (r) => r.configid === parseInt(selectedReviewId)
+                  )?.completion_status === "Completed" ||
+                  fetchedReviews.find(
+                    (r) => r.configid === parseInt(selectedReviewId)
+                  )?.review_deadline === null 
                       ? "#999"
                       : "#34A56F",
                   color: "#fff",
                   border: "none",
                   borderRadius: "6px",
                   cursor:
-                    !selectedReviewId ||
-                    fetchedReviews.find(
-                      (r) => r.configid === parseInt(selectedReviewId)
-                    )?.completion_status === "Completed"
+                  !selectedReviewId ||
+                  fetchedReviews.find(
+                    (r) => r.configid === parseInt(selectedReviewId)
+                  )?.completion_status === "Completed" ||
+                  fetchedReviews.find(
+                    (r) => r.configid === parseInt(selectedReviewId)
+                  )?.review_deadline === null
                       ? "not-allowed"
                       : "pointer",
                   marginRight: "10px",

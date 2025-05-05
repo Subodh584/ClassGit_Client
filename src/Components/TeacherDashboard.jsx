@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import PermitReviewSubmissionsModal from "./Modals/PermitReviewSubmissionsModal";
 import axios from "axios";
 import {
   Home,
@@ -28,8 +29,8 @@ import {
   LogOut,
   Search,
 } from "lucide-react";
-import { toast } from "sonner";
-
+import { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -169,7 +170,7 @@ const StatCard = ({ value, label, color, icon }) => {
 };
 
 // Action button with motion effects
-const ActionButton = ({ icon, text, color }) => {
+const ActionButton = ({ icon, text, color, onClick }) => {
   const colorMap = {
     blue: "bg-blue-100 text-blue-700 hover:bg-blue-200",
     green: "bg-green-100 text-green-700 hover:bg-green-200",
@@ -180,6 +181,7 @@ const ActionButton = ({ icon, text, color }) => {
 
   return (
     <motion.button
+      onClick={onClick} // <-- this is the missing part
       className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-lg font-medium ${colorMap[color]} transition-colors`}
       whileHover={{ y: -2, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}
       whileTap={{ y: 0, boxShadow: "none" }}
@@ -545,7 +547,9 @@ const CreateAssignmentTab = () => {
   const [maxMembers, setMaxMembers] = useState(1);
   const [loading, setLoading] = useState(false);
   const [sendMail, setSendMail] = useState(false);
-  const [reviews, setReviews] = useState([{ reviewNo: "1", reviewName: "", description: "",reviewMarks: "" }]);
+  const [reviews, setReviews] = useState([
+    { reviewNo: "1", reviewName: "", description: "", reviewMarks: "" },
+  ]);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -600,31 +604,24 @@ const CreateAssignmentTab = () => {
     setAssignmentType(e.target.value);
   }
 
-
-  
   const handleAddReview = () => {
     // Get the last review number and increment it
-    const lastReviewNo = reviews.length > 0 
-      ? parseInt(reviews[reviews.length - 1].reviewNo) + 1 
-      : 1;
+    const lastReviewNo =
+      reviews.length > 0
+        ? parseInt(reviews[reviews.length - 1].reviewNo) + 1
+        : 1;
 
     setReviews([
-      ...reviews, 
-      { 
-        reviewNo: lastReviewNo.toString(), 
-        reviewName: "", 
+      ...reviews,
+      {
+        reviewNo: lastReviewNo.toString(),
+        reviewName: "",
         description: "",
-        reviewMarks: ""
-      }
+        reviewMarks: "",
+      },
     ]);
   };
 
-    
-  const handleReviewNameChange = (index, value) => {
-    const newReviews = [...reviews];
-    newReviews[index].reviewName = value;
-    setReviews(newReviews);
-  };
   const handleReviewMarksChange = (index, value) => {
     const newReviews = [...reviews];
     newReviews[index].reviewMarks = value;
@@ -632,11 +629,13 @@ const CreateAssignmentTab = () => {
   };
 
   const handleDescriptionChange = (index, value) => {
+    const newReviews1 = [...reviews];
+    newReviews1[index].reviewName = value;
+    setReviews(newReviews1);
     const newReviews = [...reviews];
     newReviews[index].description = value;
     setReviews(newReviews);
   };
-
 
   async function handleCreateAssignment() {
     try {
@@ -659,11 +658,11 @@ const CreateAssignmentTab = () => {
           createdby: localStorage.getItem("Email"),
           createdbyName: localStorage.getItem("UserName"),
           sendMail: sendMail,
-          reviews: reviews
+          reviews: reviews,
         }
       );
       console.log(response.data);
-      alert("Assignment Created");
+      toast.success("Assignment created successfully");
       setLoading(false);
       window.location.reload();
     } catch (err) {
@@ -690,7 +689,7 @@ const CreateAssignmentTab = () => {
           ></motion.div>
         </div>
       )}
-      {toast.success("Assignment created successfully")}
+      {toast.success("Initializing assignment creation")}
     </>
   ) : (
     <motion.div
@@ -781,74 +780,67 @@ const CreateAssignmentTab = () => {
           </div>
         </div>
 
-
-
         <div className="space-y-4">
-      {reviews.map((review, index) => (
-        <div key={index} className="border border-gray-300 rounded-md p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Review No.
-              </label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={review.reviewNo}
-                disabled
-              />
+          {reviews.map((review, index) => (
+            <div
+              key={index}
+              className="border border-gray-300 rounded-md p-4 space-y-3"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Review No.
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={review.reviewNo}
+                    disabled
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Marks
+                  </label>
+                  <input
+                    type="Number"
+                    step="any"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={review.reviewMarks}
+                    onChange={(e) =>
+                      handleReviewMarksChange(index, e.target.value)
+                    }
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Review Description
+                </label>
+                <textarea
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows="4"
+                  placeholder="Enter assignment description"
+                  value={review.description}
+                  onChange={(e) =>
+                    handleDescriptionChange(index, e.target.value)
+                  }
+                ></textarea>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Marks
-              </label>
-              <input
-                type="Number"
-                step="any"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={review.reviewMarks}
-                onChange={(e) => handleReviewMarksChange(index, e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Review Name
-              </label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter Review Name"
-                value={review.reviewName}
-                onChange={(e) => handleReviewNameChange(index, e.target.value)}
-              />
-            </div>
-          </div>
+          ))}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Review Description
-            </label>
-            <textarea
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows="4"
-              placeholder="Enter assignment description"
-              value={review.description}
-              onChange={(e) => handleDescriptionChange(index, e.target.value)}
-            ></textarea>
+            <motion.button
+              onClick={handleAddReview}
+              className="w-full py-2 bg-blue-50 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-100 transition-colors flex items-center justify-center"
+              whileHover={{ y: -2 }}
+              whileTap={{ y: 0 }}
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Review
+            </motion.button>
           </div>
         </div>
-      ))}
-      <div>
-        <motion.button
-          onClick={handleAddReview}
-          className="w-full py-2 bg-blue-50 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-100 transition-colors flex items-center justify-center"
-          whileHover={{ y: -2 }}
-          whileTap={{ y: 0 }}
-        >
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Add Review
-        </motion.button>
-      </div>
-    </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -886,16 +878,6 @@ const CreateAssignmentTab = () => {
                 value="group"
               />
               <label htmlFor="group">Group Project</label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                onChange={handleAssignmentType}
-                type="radio"
-                id="peer"
-                name="assignmentType"
-                value="peer"
-              />
-              <label htmlFor="peer">Peer Review</label>
             </div>
           </div>
         </div>
@@ -968,21 +950,6 @@ const CreateAssignmentTab = () => {
               />
               <label htmlFor="allowLate" className="text-sm text-gray-700">
                 Allow late submissions
-              </label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                onChange={() => {
-                  setEnablePlagiarism(!enablePlagiarism);
-                }}
-                type="checkbox"
-                id="enablePlagiarism"
-              />
-              <label
-                htmlFor="enablePlagiarism"
-                className="text-sm text-gray-700"
-              >
-                Enable plagiarism detection
               </label>
             </div>
             <div className="flex items-center space-x-2">
@@ -1157,14 +1124,14 @@ const PendingReviewsTab = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-      >
-      </motion.div>
+      ></motion.div>
     </motion.div>
   );
 };
 
 // Main TeacherDashboard Component
 const TeacherDashboard = () => {
+  const [showPermitReviewModal, setShowPermitReviewModal] = useState(false);
   const [subjects, setSubjects] = useState();
   const [activeTab, setActiveTab] = useState("pending");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -1212,544 +1179,561 @@ const TeacherDashboard = () => {
       window.location.reload();
     } catch (err) {
       console.error(err);
-      alert("Error adding subject");
+      toast.error("Error adding subject");
     }
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Overlay for mobile menu */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            className="lg:hidden fixed inset-0 bg-gray-800 z-30"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => setMobileMenuOpen(false)}
-          ></motion.div>
-        )}
-      </AnimatePresence>
+    <>
+      <div className="flex min-h-screen bg-gray-50">
+        <Toaster position="top-center" reverseOrder={false} />
+        {/* Overlay for mobile menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              className="lg:hidden fixed inset-0 bg-gray-800 z-30"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setMobileMenuOpen(false)}
+            ></motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Sidebar Navigation - Enhanced with animation */}
-      <motion.aside
-        className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 shadow-md fixed h-screen z-20"
-        initial={{ x: -20, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="p-6">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            ClassGit
-          </h1>
-        </div>
-        <nav className="flex-grow mt-4 overflow-y-auto">
-          <SidebarNavItem
-            icon={<Home className="h-5 w-5" />}
-            text="Dashboard"
-            active={activeSection === "dashboard"}
-            onClick={() => setActiveSection("dashboard")}
-          />
-          <SidebarNavItem
-            icon={<BookOpen className="h-5 w-5" />}
-            text="Assignments"
-            active={activeSection === "assignments"}
-            onClick={() => setActiveSection("assignments")}
-          />
-          <SidebarNavItem
-            icon={<Users className="h-5 w-5" />}
-            text="Students"
-            active={activeSection === "students"}
-            onClick={() => setActiveSection("students")}
-          />
-          <SidebarNavItem
-            icon={<Book className="h-5 w-5" />}
-            text="Classes"
-            active={activeSection === "classes"}
-            onClick={() => setActiveSection("classes")}
-          />
-          <SidebarNavItem
-            icon={<MessageSquare className="h-5 w-5" />}
-            text="Messages"
-            active={activeSection === "messages"}
-            onClick={() => setActiveSection("messages")}
-          />
-          <SidebarNavItem
-            icon={<Bell className="h-5 w-5" />}
-            text="Notifications"
-            active={activeSection === "notifications"}
-            onClick={() => setActiveSection("notifications")}
-            badge={3}
-          />
-        </nav>
-        <div className="p-4 border-t border-gray-200 mt-auto">
-          <UserProfile name={teacherName} department="Computer Science Dept." />
-        </div>
-      </motion.aside>
-
-      {/* Mobile Sidebar - Animated */}
-      <motion.aside
-        className="lg:hidden fixed h-screen w-64 bg-white border-r border-gray-200 shadow-lg z-40"
-        initial={{ x: "-100%" }}
-        animate={{ x: mobileMenuOpen ? 0 : "-100%" }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      >
-        <div className="p-6 flex justify-between items-center border-b border-gray-100">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            ClassGit
-          </h1>
-          <motion.button
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-gray-500"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <X className="h-6 w-6" />
-          </motion.button>
-        </div>
-        <nav className="flex-grow py-2 overflow-y-auto">
-          <SidebarNavItem
-            icon={<Home className="h-5 w-5" />}
-            text="Dashboard"
-            active={activeSection === "dashboard"}
-            onClick={() => {
-              setActiveSection("dashboard");
-              setMobileMenuOpen(false);
-            }}
-          />
-          <SidebarNavItem
-            icon={<BookOpen className="h-5 w-5" />}
-            text="Assignments"
-            active={activeSection === "assignments"}
-            onClick={() => {
-              setActiveSection("assignments");
-              setMobileMenuOpen(false);
-            }}
-          />
-          <SidebarNavItem
-            icon={<Users className="h-5 w-5" />}
-            text="Students"
-            active={activeSection === "students"}
-            onClick={() => {
-              setActiveSection("students");
-              setMobileMenuOpen(false);
-            }}
-          />
-          <SidebarNavItem
-            icon={<Book className="h-5 w-5" />}
-            text="Classes"
-            active={activeSection === "classes"}
-            onClick={() => {
-              setActiveSection("classes");
-              setMobileMenuOpen(false);
-            }}
-          />
-          <SidebarNavItem
-            icon={<MessageSquare className="h-5 w-5" />}
-            text="Messages"
-            active={activeSection === "messages"}
-            onClick={() => {
-              setActiveSection("messages");
-              setMobileMenuOpen(false);
-            }}
-          />
-          <SidebarNavItem
-            icon={<Bell className="h-5 w-5" />}
-            text="Notifications"
-            active={activeSection === "notifications"}
-            onClick={() => {
-              setActiveSection("notifications");
-              setMobileMenuOpen(false);
-            }}
-            badge={3}
-          />
-        </nav>
-        <div className="p-4 border-t border-gray-200 mt-auto">
-          <UserProfile name={teacherName} department="Computer Science Dept." />
-        </div>
-      </motion.aside>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:ml-64">
-        {/* Header */}
-        <motion.header
-          className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+        {/* Sidebar Navigation - Enhanced with animation */}
+        <motion.aside
+          className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 shadow-md fixed h-screen z-20"
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="px-4 md:px-6 py-4 flex justify-between items-center">
-            <div className="flex items-center">
-              <motion.button
-                onClick={() => setMobileMenuOpen(true)}
-                className="mr-4 lg:hidden text-gray-600 hover:text-gray-800 p-1 rounded-md hover:bg-gray-100"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Menu className="h-6 w-6" />
-              </motion.button>
-              <div className="flex items-center lg:hidden">
-                <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  ClassGit
-                </h1>
-              </div>
-              <div className="hidden lg:block ml-4">
-                <span className="text-gray-700 font-medium">
-                  Teacher Dashboard
-                </span>
-              </div>
-            </div>
-
-            {/* Search Bar - Enhanced for medium screens */}
-            <div className="hidden md:block mx-4 lg:mx-0 flex-1 max-w-md">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150 ease-in-out sm:text-sm"
-                  placeholder="Search..."
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-1 md:space-x-4">
-              <motion.button
-                className="relative hover:bg-gray-100 p-2 rounded-full transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Bell className="h-5 w-5 text-gray-600" />
-                <span className="absolute top-0 right-0 inline-block w-2 h-2 bg-red-600 rounded-full"></span>
-              </motion.button>
-              <motion.button
-                className="hover:bg-gray-100 p-2 rounded-full transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Settings className="h-5 w-5 text-gray-600" />
-              </motion.button>
-              <div className="border-l border-gray-200 h-8 mx-1 hidden sm:block"></div>
-              <div className="flex items-center space-x-3">
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-700 flex items-center justify-center text-white font-medium shadow-sm">
-                  {teacherName
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </div>
-                <div className="hidden sm:block">
-                  <div className="text-sm font-medium text-gray-700">
-                    {teacherName.split(" ")[0]}
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="p-6">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              ClassGit
+            </h1>
           </div>
-        </motion.header>
+          <nav className="flex-grow mt-4 overflow-y-auto">
+            <SidebarNavItem
+              icon={<Home className="h-5 w-5" />}
+              text="Dashboard"
+              active={activeSection === "dashboard"}
+              onClick={() => setActiveSection("dashboard")}
+            />
+            <SidebarNavItem
+              icon={<BookOpen className="h-5 w-5" />}
+              text="Assignments"
+              active={activeSection === "assignments"}
+              onClick={() => setActiveSection("assignments")}
+            />
+            <SidebarNavItem
+              icon={<Users className="h-5 w-5" />}
+              text="Students"
+              active={activeSection === "students"}
+              onClick={() => setActiveSection("students")}
+            />
+            <SidebarNavItem
+              icon={<Book className="h-5 w-5" />}
+              text="Classes"
+              active={activeSection === "classes"}
+              onClick={() => setActiveSection("classes")}
+            />
+            <SidebarNavItem
+              icon={<MessageSquare className="h-5 w-5" />}
+              text="Messages"
+              active={activeSection === "messages"}
+              onClick={() => setActiveSection("messages")}
+            />
+            <SidebarNavItem
+              icon={<Bell className="h-5 w-5" />}
+              text="Notifications"
+              active={activeSection === "notifications"}
+              onClick={() => setActiveSection("notifications")}
+              badge={3}
+            />
+          </nav>
+          <div className="p-4 border-t border-gray-200 mt-auto">
+            <UserProfile
+              name={teacherName}
+              department="Computer Science Dept."
+            />
+          </div>
+        </motion.aside>
 
-        {/* Page Content */}
-        <div className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-              {/* Left Column - Main Content */}
-              <div className="flex-grow lg:max-w-[65%]">
-                {/* Welcome Section */}
-                <motion.div
-                  className="bg-white rounded-xl shadow-sm p-6 md:p-8 mb-6 md:mb-8 border border-gray-100"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                  whileHover={{
-                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                  }}
+        {/* Mobile Sidebar - Animated */}
+        <motion.aside
+          className="lg:hidden fixed h-screen w-64 bg-white border-r border-gray-200 shadow-lg z-40"
+          initial={{ x: "-100%" }}
+          animate={{ x: mobileMenuOpen ? 0 : "-100%" }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        >
+          <div className="p-6 flex justify-between items-center border-b border-gray-100">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              ClassGit
+            </h1>
+            <motion.button
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-gray-500"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <X className="h-6 w-6" />
+            </motion.button>
+          </div>
+          <nav className="flex-grow py-2 overflow-y-auto">
+            <SidebarNavItem
+              icon={<Home className="h-5 w-5" />}
+              text="Dashboard"
+              active={activeSection === "dashboard"}
+              onClick={() => {
+                setActiveSection("dashboard");
+                setMobileMenuOpen(false);
+              }}
+            />
+            <SidebarNavItem
+              icon={<BookOpen className="h-5 w-5" />}
+              text="Assignments"
+              active={activeSection === "assignments"}
+              onClick={() => {
+                setActiveSection("assignments");
+                setMobileMenuOpen(false);
+              }}
+            />
+            <SidebarNavItem
+              icon={<Users className="h-5 w-5" />}
+              text="Students"
+              active={activeSection === "students"}
+              onClick={() => {
+                setActiveSection("students");
+                setMobileMenuOpen(false);
+              }}
+            />
+            <SidebarNavItem
+              icon={<Book className="h-5 w-5" />}
+              text="Classes"
+              active={activeSection === "classes"}
+              onClick={() => {
+                setActiveSection("classes");
+                setMobileMenuOpen(false);
+              }}
+            />
+            <SidebarNavItem
+              icon={<MessageSquare className="h-5 w-5" />}
+              text="Messages"
+              active={activeSection === "messages"}
+              onClick={() => {
+                setActiveSection("messages");
+                setMobileMenuOpen(false);
+              }}
+            />
+            <SidebarNavItem
+              icon={<Bell className="h-5 w-5" />}
+              text="Notifications"
+              active={activeSection === "notifications"}
+              onClick={() => {
+                setActiveSection("notifications");
+                setMobileMenuOpen(false);
+              }}
+              badge={3}
+            />
+          </nav>
+          <div className="p-4 border-t border-gray-200 mt-auto">
+            <UserProfile
+              name={teacherName}
+              department="Computer Science Dept."
+            />
+          </div>
+        </motion.aside>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col lg:ml-64">
+          {/* Header */}
+          <motion.header
+            className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="px-4 md:px-6 py-4 flex justify-between items-center">
+              <div className="flex items-center">
+                <motion.button
+                  onClick={() => setMobileMenuOpen(true)}
+                  className="mr-4 lg:hidden text-gray-600 hover:text-gray-800 p-1 rounded-md hover:bg-gray-100"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <h2 className="text-xl md:text-2xl font-bold text-gray-800">
-                    Welcome back, Prof. {teacherName.split(" ")[0]}!
-                  </h2>
-                  <p className="text-gray-600 mt-2">
-                    Today is Saturday, March 15, 2025. You have{" "}
-                    {stats.pendingAssignments} pending submissions to review.
-                  </p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6 md:mt-8">
-                    <StatCard
-                      value={stats.pendingAssignments}
-                      label="Pending Reviews"
-                      color="red"
-                      icon={<Clock className="h-5 w-5 text-white" />}
-                    />
-                    <StatCard
-                      value={stats.totalStudents}
-                      label="Total Students"
-                      color="blue"
-                      icon={<Users className="h-5 w-5 text-white" />}
-                    />
-                    <StatCard
-                      value={stats.activeClasses}
-                      label="Active Classes"
-                      color="green"
-                      icon={<Book className="h-5 w-5 text-white" />}
-                    />
-                    <StatCard
-                      value={stats.teamProjects}
-                      label="Team Projects"
-                      color="amber"
-                      icon={<Users className="h-5 w-5 text-white" />}
-                    />
-                  </div>
-                </motion.div>
-
-                {/* Quick Actions */}
-                <motion.div
-                  className="bg-white rounded-xl shadow-sm p-5 md:p-6 mb-6 md:mb-8 border border-gray-100"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.1 }}
-                  whileHover={{
-                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                  }}
-                >
-                  <h3 className="font-semibold text-gray-800 mb-4">
-                    Quick Actions
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-                    <ActionButton
-                      icon={<PlusCircle className="h-5 w-5" />}
-                      text="Create Assignment"
-                      color="blue"
-                    />
-                    <ActionButton
-                      icon={<CheckCircle className="h-5 w-5" />}
-                      text="Review Submissions"
-                      color="green"
-                    />
-                    <ActionButton
-                      icon={<FileText className="h-5 w-5" />}
-                      text="View Reports"
-                      color="purple"
-                    />
-                  </div>
-                </motion.div>
-
-                {/* Tabs Navigation */}
-                <motion.div
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.2 }}
-                  whileHover={{
-                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                  }}
-                >
-                  <div className="border-b border-gray-200">
-                    <div className="flex overflow-x-auto hide-scrollbar py-2 px-2 md:px-4">
-                      <TabButton
-                        active={activeTab === "pending"}
-                        onClick={() => setActiveTab("pending")}
-                        icon={<Clock className="h-5 w-5" />}
-                        text="Pending Reviews"
-                        badge={stats.pendingAssignments}
-                      />
-                      <TabButton
-                        active={activeTab === "all"}
-                        onClick={() => setActiveTab("all")}
-                        icon={<FileText className="h-5 w-5" />}
-                        text="All Assignments"
-                      />
-                      <TabButton
-                        active={activeTab === "create"}
-                        onClick={() => setActiveTab("create")}
-                        icon={<PlusCircle className="h-5 w-5" />}
-                        text="Create Assignment"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Tab Content with AnimatePresence for smooth transitions */}
-                  <div className="p-4 md:p-6">
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={activeTab}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        {activeTab === "pending" && <PendingReviewsTab />}
-                        {activeTab === "all" && <AllAssignmentsTab />}
-                        {activeTab === "create" && <CreateAssignmentTab />}
-                      </motion.div>
-                    </AnimatePresence>
-                  </div>
-                </motion.div>
+                  <Menu className="h-6 w-6" />
+                </motion.button>
+                <div className="flex items-center lg:hidden">
+                  <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                    ClassGit
+                  </h1>
+                </div>
+                <div className="hidden lg:block ml-4">
+                  <span className="text-gray-700 font-medium">
+                    Teacher Dashboard
+                  </span>
+                </div>
               </div>
 
-              {/* Right Sidebar */}
-              <div className="lg:w-80 xl:w-96 space-y-6 flex-shrink-0">
-                {/* Class Selector */}
-                <motion.div
-                  className="bg-white rounded-xl shadow-sm p-5 border border-gray-100"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.3 }}
-                  whileHover={{
-                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                  }}
-                >
-                  <h3 className="font-semibold text-gray-800 flex items-center mb-4">
-                    <Book className="h-5 w-5 mr-2 text-blue-600" />
-                    My Subjects
-                  </h3>
-                  <div className="space-y-2">
-                    {subjects
-                      ? subjects.map((subject) => {
-                          return (
-                            <ClassSelector
-                              key={subject.subjectid}
-                              name={subject.subjectname}
-                              count={"NA"}
-                            />
-                          );
-                        })
-                      : null}
+              {/* Search Bar - Enhanced for medium screens */}
+              <div className="hidden md:block mx-4 lg:mx-0 flex-1 max-w-md">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-gray-400" />
                   </div>
-                  {addClass && (
-                    <div className="flex w-full border border-gray-300 rounded-md">
-                      <input
-                        onChange={(e) => setNewSubject(e.target.value)}
-                        type="text"
-                        className="flex-grow px-3 py-2 focus:outline-none rounded-l-md"
-                        placeholder="Enter Subject Name"
-                      />
-                      {subLoading ? (
-                        "Adding..."
-                      ) : (
-                        <motion.button
-                          onClick={handleAddSubject}
-                          className="px-3 py-2 bg-blue-100 text-blue-700 rounded-r-md text-sm hover:bg-blue-200 transition-colors"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          Done
-                        </motion.button>
-                      )}
-                    </div>
-                  )}
-                  <div className="mt-4 pt-3 border-t border-gray-100">
-                    <motion.button
-                      onClick={() => {
-                        setAddClass(true);
-                      }}
-                      className="w-full py-2 bg-blue-50 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-100 transition-colors flex items-center justify-center"
-                      whileHover={{ y: -2 }}
-                      whileTap={{ y: 0 }}
-                    >
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Add New Subject
-                    </motion.button>
-                  </div>
-                </motion.div>
+                  <input
+                    type="text"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150 ease-in-out sm:text-sm"
+                    placeholder="Search..."
+                  />
+                </div>
+              </div>
 
-                {/* Recent Activity */}
-                <motion.div
-                  className="bg-white rounded-xl shadow-sm p-5 border border-gray-100"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.4 }}
-                  whileHover={{
-                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                  }}
+              <div className="flex items-center space-x-1 md:space-x-4">
+                <motion.button
+                  className="relative hover:bg-gray-100 p-2 rounded-full transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
-                    <Clock className="h-5 w-5 mr-2 text-indigo-600" />
-                    Recent Activity
-                  </h3>
+                  <Bell className="h-5 w-5 text-gray-600" />
+                  <span className="absolute top-0 right-0 inline-block w-2 h-2 bg-red-600 rounded-full"></span>
+                </motion.button>
+                <motion.button
+                  className="hover:bg-gray-100 p-2 rounded-full transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Settings className="h-5 w-5 text-gray-600" />
+                </motion.button>
+                <div className="border-l border-gray-200 h-8 mx-1 hidden sm:block"></div>
+                <div className="flex items-center space-x-3">
+                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-700 flex items-center justify-center text-white font-medium shadow-sm">
+                    {teacherName
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
+                  </div>
+                  <div className="hidden sm:block">
+                    <div className="text-sm font-medium text-gray-700">
+                      {teacherName.split(" ")[0]}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.header>
+
+          {/* Page Content */}
+          <div className="flex-1 overflow-auto p-4 md:p-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+                {/* Left Column - Main Content */}
+                <div className="flex-grow lg:max-w-[65%]">
+                  {/* Welcome Section */}
                   <motion.div
-                    className="space-y-4"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
+                    className="bg-white rounded-xl shadow-sm p-6 md:p-8 mb-6 md:mb-8 border border-gray-100"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    whileHover={{
+                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                    }}
                   >
-                  </motion.div>
-                  <div className="mt-4 text-center">
-                    <motion.button
-                      className="text-blue-600 text-sm font-medium hover:text-blue-800 transition-colors"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      View All Activity
-                    </motion.button>
-                  </div>
-                </motion.div>
+                    <h2 className="text-xl md:text-2xl font-bold text-gray-800">
+                      Welcome back, Prof. {teacherName.split(" ")[0]}!
+                    </h2>
+                    <p className="text-gray-600 mt-2">
+                      Today is Saturday, March 15, 2025. You have{" "}
+                      {stats.pendingAssignments} pending submissions to review.
+                    </p>
 
-                {/* Calendar Widget */}
-                <motion.div
-                  className="bg-white rounded-xl shadow-sm p-5 border border-gray-100"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.5 }}
-                  whileHover={{
-                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-800 flex items-center">
-                      <Calendar className="h-5 w-5 mr-2 text-purple-600" />
-                      Calendar
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6 md:mt-8">
+                      <StatCard
+                        value={stats.pendingAssignments}
+                        label="Pending Reviews"
+                        color="red"
+                        icon={<Clock className="h-5 w-5 text-white" />}
+                      />
+                      <StatCard
+                        value={stats.totalStudents}
+                        label="Total Students"
+                        color="blue"
+                        icon={<Users className="h-5 w-5 text-white" />}
+                      />
+                      <StatCard
+                        value={stats.activeClasses}
+                        label="Active Classes"
+                        color="green"
+                        icon={<Book className="h-5 w-5 text-white" />}
+                      />
+                      <StatCard
+                        value={stats.teamProjects}
+                        label="Team Projects"
+                        color="amber"
+                        icon={<Users className="h-5 w-5 text-white" />}
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* Quick Actions */}
+                  <motion.div
+                    className="bg-white rounded-xl shadow-sm p-5 md:p-6 mb-6 md:mb-8 border border-gray-100"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                    whileHover={{
+                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                    }}
+                  >
+                    <h3 className="font-semibold text-gray-800 mb-4">
+                      Quick Actions
                     </h3>
-                    <span className="text-sm font-medium bg-purple-50 text-purple-700 px-2 py-1 rounded-md">
-                      March 2025
-                    </span>
-                  </div>
-                  <EnhancedCalendarWidget currentDate={15} />
-                  <div className="mt-4 flex justify-between text-sm">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-                      <span className="text-gray-600">Due Dates</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                      <ActionButton
+                        icon={<Edit className="h-5 w-5" />}
+                        text="Edit Assignment"
+                        color="blue"
+                      />
+                      <ActionButton
+                        icon={<CheckCircle className="h-5 w-5" />}
+                        text="Permit Review Submissions"
+                        color="green"
+                        onClick={() => {
+                          setShowPermitReviewModal(true);
+                          console.log("clicked");
+                        }}
+                      />
+
+                      <ActionButton
+                        icon={<FileText className="h-5 w-5" />}
+                        text="View Reports"
+                        color="purple"
+                      />
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
-                      <span className="text-gray-600">Office Hours</span>
+                  </motion.div>
+
+                  {/* Tabs Navigation */}
+                  <motion.div
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                    whileHover={{
+                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                    }}
+                  >
+                    <div className="border-b border-gray-200">
+                      <div className="flex overflow-x-auto hide-scrollbar py-2 px-2 md:px-4">
+                        <TabButton
+                          active={activeTab === "pending"}
+                          onClick={() => setActiveTab("pending")}
+                          icon={<Clock className="h-5 w-5" />}
+                          text="Pending Reviews"
+                          badge={stats.pendingAssignments}
+                        />
+                        <TabButton
+                          active={activeTab === "all"}
+                          onClick={() => setActiveTab("all")}
+                          icon={<FileText className="h-5 w-5" />}
+                          text="All Assignments"
+                        />
+                        <TabButton
+                          active={activeTab === "create"}
+                          onClick={() => setActiveTab("create")}
+                          icon={<PlusCircle className="h-5 w-5" />}
+                          text="Create Assignment"
+                        />
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
+
+                    {/* Tab Content with AnimatePresence for smooth transitions */}
+                    <div className="p-4 md:p-6">
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={activeTab}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          {activeTab === "pending" && <PendingReviewsTab />}
+                          {activeTab === "all" && <AllAssignmentsTab />}
+                          {activeTab === "create" && <CreateAssignmentTab />}
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Right Sidebar */}
+                <div className="lg:w-80 xl:w-96 space-y-6 flex-shrink-0">
+                  {/* Class Selector */}
+                  <motion.div
+                    className="bg-white rounded-xl shadow-sm p-5 border border-gray-100"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                    whileHover={{
+                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                    }}
+                  >
+                    <h3 className="font-semibold text-gray-800 flex items-center mb-4">
+                      <Book className="h-5 w-5 mr-2 text-blue-600" />
+                      My Subjects
+                    </h3>
+                    <div className="space-y-2">
+                      {subjects
+                        ? subjects.map((subject) => {
+                            return (
+                              <ClassSelector
+                                key={subject.subjectid}
+                                name={subject.subjectname}
+                                count={"NA"}
+                              />
+                            );
+                          })
+                        : null}
+                    </div>
+                    {addClass && (
+                      <div className="flex w-full border border-gray-300 rounded-md">
+                        <input
+                          onChange={(e) => setNewSubject(e.target.value)}
+                          type="text"
+                          className="flex-grow px-3 py-2 focus:outline-none rounded-l-md"
+                          placeholder="Enter Subject Name"
+                        />
+                        {subLoading ? (
+                          "Adding..."
+                        ) : (
+                          <motion.button
+                            onClick={handleAddSubject}
+                            className="px-3 py-2 bg-blue-100 text-blue-700 rounded-r-md text-sm hover:bg-blue-200 transition-colors"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            Done
+                          </motion.button>
+                        )}
+                      </div>
+                    )}
+                    <div className="mt-4 pt-3 border-t border-gray-100">
+                      <motion.button
+                        onClick={() => {
+                          setAddClass(true);
+                        }}
+                        className="w-full py-2 bg-blue-50 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-100 transition-colors flex items-center justify-center"
+                        whileHover={{ y: -2 }}
+                        whileTap={{ y: 0 }}
+                      >
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Add New Subject
+                      </motion.button>
+                    </div>
+                  </motion.div>
+
+                  {/* Recent Activity */}
+                  <motion.div
+                    className="bg-white rounded-xl shadow-sm p-5 border border-gray-100"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.4 }}
+                    whileHover={{
+                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                    }}
+                  >
+                    <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
+                      <Clock className="h-5 w-5 mr-2 text-indigo-600" />
+                      Recent Activity
+                    </h3>
+                    <motion.div
+                      className="space-y-4"
+                      variants={containerVariants}
+                      initial="hidden"
+                      animate="visible"
+                    ></motion.div>
+                    <div className="mt-4 text-center">
+                      <motion.button
+                        className="text-blue-600 text-sm font-medium hover:text-blue-800 transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        View All Activity
+                      </motion.button>
+                    </div>
+                  </motion.div>
+
+                  {/* Calendar Widget */}
+                  <motion.div
+                    className="bg-white rounded-xl shadow-sm p-5 border border-gray-100"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.5 }}
+                    whileHover={{
+                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold text-gray-800 flex items-center">
+                        <Calendar className="h-5 w-5 mr-2 text-purple-600" />
+                        Calendar
+                      </h3>
+                      <span className="text-sm font-medium bg-purple-50 text-purple-700 px-2 py-1 rounded-md">
+                        March 2025
+                      </span>
+                    </div>
+                    <EnhancedCalendarWidget currentDate={15} />
+                    <div className="mt-4 flex justify-between text-sm">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                        <span className="text-gray-600">Due Dates</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
+                        <span className="text-gray-600">Office Hours</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
               </div>
             </div>
           </div>
+          {showPermitReviewModal && (
+        <PermitReviewSubmissionsModal
+           setShowSubmissionsModal1={setShowPermitReviewModal}
+        />
+      )}
+          {/* Footer */}
+          <footer className="bg-white border-t border-gray-200 mt-auto">
+            <div className="container mx-auto px-4 md:px-6 py-4 md:py-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
+              <div className="mb-3 md:mb-0">
+                © 2025 ClassGit. All rights reserved.
+              </div>
+              <div className="flex flex-wrap justify-center space-x-4 md:space-x-6">
+                <a
+                  href="#"
+                  className="hover:text-blue-600 transition-colors mb-2 md:mb-0"
+                >
+                  Help
+                </a>
+                <a
+                  href="#"
+                  className="hover:text-blue-600 transition-colors mb-2 md:mb-0"
+                >
+                  Documentation
+                </a>
+                <a
+                  href="#"
+                  className="hover:text-blue-600 transition-colors mb-2 md:mb-0"
+                >
+                  Contact Support
+                </a>
+              </div>
+            </div>
+          </footer>
         </div>
-
-        {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 mt-auto">
-          <div className="container mx-auto px-4 md:px-6 py-4 md:py-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-            <div className="mb-3 md:mb-0">
-              © 2025 ClassGit. All rights reserved.
-            </div>
-            <div className="flex flex-wrap justify-center space-x-4 md:space-x-6">
-              <a
-                href="#"
-                className="hover:text-blue-600 transition-colors mb-2 md:mb-0"
-              >
-                Help
-              </a>
-              <a
-                href="#"
-                className="hover:text-blue-600 transition-colors mb-2 md:mb-0"
-              >
-                Documentation
-              </a>
-              <a
-                href="#"
-                className="hover:text-blue-600 transition-colors mb-2 md:mb-0"
-              >
-                Contact Support
-              </a>
-            </div>
-          </div>
-        </footer>
       </div>
-    </div>
+    </>
   );
 };
 
