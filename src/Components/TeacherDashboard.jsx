@@ -206,25 +206,6 @@ const ClassSelector = ({ name, count }) => {
   );
 };
 
-// Teacher activity item with subtle animation
-const TeacherActivityItem = ({ action, subject, student, time }) => {
-  return (
-    <motion.div
-      className="border-l-4 border-blue-400 pl-3 py-1"
-      initial={{ x: -10, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      whileHover={{ x: 2, backgroundColor: "#f9fafb" }}
-    >
-      <div className="flex items-center justify-between">
-        <span className="font-medium text-gray-800">{action}</span>
-        <span className="text-xs text-gray-500">{time}</span>
-      </div>
-      <div className="text-gray-600 text-sm mt-1">{subject}</div>
-      <div className="text-gray-500 text-xs mt-1">Student: {student}</div>
-    </motion.div>
-  );
-};
-
 // Enhanced user profile component with animations
 const UserProfile = ({ name, department }) => {
   const navigate = useNavigate();
@@ -537,7 +518,7 @@ const CreateAssignmentTab = () => {
   const [selectedSubject, setSelectedSubject] = useState();
   const [selectedSection, setSelectedSection] = useState();
   const [dueDate, setDueDate] = useState();
-  const [dueTime, setDueTime] = useState();
+  const [dueTime, setDueTime] = useState("23:59");
   const [description, setDescription] = useState();
   const [assignmentType, setAssignmentType] = useState();
   const [allowLate, setAllowLate] = useState(false);
@@ -565,20 +546,19 @@ const CreateAssignmentTab = () => {
 
         setSections(response1.data);
         setSubjects(response.data);
-        const date = new Date();
-        const month = date.getMonth() + 2;
-        const day = date.getDate();
-        setCurrentDate(
-          `${date.getFullYear()}-${month < 10 ? `0${month}` : month}-${
-            day < 10 ? `0${day}` : day
-          }`
-        );
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, "0");
+        const day = String(today.getDate()).padStart(2, "0");
+        const formattedDate = `${year}-${month}-${day}`;
+        setCurrentDate(formattedDate);
+        setDueDate(formattedDate);
       } catch (err) {
         console.error(err);
       }
     };
     fetchData();
-  }, [setCurrentDate]);
+  }, []);
 
   function handleTitle(e) {
     setTitle(e.target.value);
@@ -590,10 +570,6 @@ const CreateAssignmentTab = () => {
 
   function handleDueDate(e) {
     setDueDate(e.target.value);
-  }
-
-  function handleDueTime(e) {
-    setDueTime(e.target.value);
   }
 
   function handleDescription(e) {
@@ -760,22 +736,11 @@ const CreateAssignmentTab = () => {
               Due Date
             </label>
             <input
-              onChange={handleDueDate}
               type="date"
+              min={currDate}
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              defaultValue={currDate}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Due Time
-            </label>
-            <input
-              onChange={handleDueTime}
-              type="time"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              defaultValue="23:59"
             />
           </div>
         </div>
@@ -1699,10 +1664,10 @@ const TeacherDashboard = () => {
             </div>
           </div>
           {showPermitReviewModal && (
-        <PermitReviewSubmissionsModal
-           setShowSubmissionsModal1={setShowPermitReviewModal}
-        />
-      )}
+            <PermitReviewSubmissionsModal
+              setShowSubmissionsModal1={setShowPermitReviewModal}
+            />
+          )}
           {/* Footer */}
           <footer className="bg-white border-t border-gray-200 mt-auto">
             <div className="container mx-auto px-4 md:px-6 py-4 md:py-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">

@@ -653,14 +653,21 @@ export default function Explorer() {
             <h3>Select review to submit assignment for</h3>
             {fetchedReviews.find(
               (r) => r.configid === parseInt(selectedReviewId)
-            )?.completion_status === "Not Completed" && (
-              <h5
-                style={{ color: "orange", fontSize: "13px", marginBottom: "10px" }}
-              >
-                ⚠️ Once submitted, you cannot unsubmit the assignment for this
-                review. Please confirm carefully.
-              </h5>
-            )}
+            )?.completion_status === "Not Completed" &&
+              fetchedReviews.find(
+                (r) => r.configid === parseInt(selectedReviewId)
+              )?.review_deadline !== null && (
+                <h5
+                  style={{
+                    color: "orange",
+                    fontSize: "13px",
+                    marginBottom: "10px",
+                  }}
+                >
+                  ⚠️ Once submitted, you cannot unsubmit the assignment for this
+                  review. Please confirm carefully.
+                </h5>
+              )}
 
             <select
               value={selectedReviewId}
@@ -777,26 +784,26 @@ export default function Explorer() {
                 style={{
                   padding: "10px 16px",
                   backgroundColor:
-                  !selectedReviewId ||
-                  fetchedReviews.find(
-                    (r) => r.configid === parseInt(selectedReviewId)
-                  )?.completion_status === "Completed" ||
-                  fetchedReviews.find(
-                    (r) => r.configid === parseInt(selectedReviewId)
-                  )?.review_deadline === null 
+                    !selectedReviewId ||
+                    fetchedReviews.find(
+                      (r) => r.configid === parseInt(selectedReviewId)
+                    )?.completion_status === "Completed" ||
+                    fetchedReviews.find(
+                      (r) => r.configid === parseInt(selectedReviewId)
+                    )?.review_deadline === null
                       ? "#999"
                       : "#34A56F",
                   color: "#fff",
                   border: "none",
                   borderRadius: "6px",
                   cursor:
-                  !selectedReviewId ||
-                  fetchedReviews.find(
-                    (r) => r.configid === parseInt(selectedReviewId)
-                  )?.completion_status === "Completed" ||
-                  fetchedReviews.find(
-                    (r) => r.configid === parseInt(selectedReviewId)
-                  )?.review_deadline === null
+                    !selectedReviewId ||
+                    fetchedReviews.find(
+                      (r) => r.configid === parseInt(selectedReviewId)
+                    )?.completion_status === "Completed" ||
+                    fetchedReviews.find(
+                      (r) => r.configid === parseInt(selectedReviewId)
+                    )?.review_deadline === null
                       ? "not-allowed"
                       : "pointer",
                   marginRight: "10px",
