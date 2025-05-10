@@ -13,7 +13,6 @@ export default function LogIn() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in
     const checkAuth = async () => {
       const isAuthenticated = await AuthService.checkAuthentication();
       if (isAuthenticated) {

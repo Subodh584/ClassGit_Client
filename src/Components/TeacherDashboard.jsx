@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import PermitReviewSubmissionsModal from "./Modals/PermitReviewSubmissionsModal";
 import axios from "axios";
+import { ArrowLeft } from "lucide-react";
 import {
   Home,
   BookOpen,
@@ -31,6 +32,7 @@ import {
 } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
+import EditAssignmentsModal from "./Modals/EditAssignmentsModal";
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -639,8 +641,11 @@ const CreateAssignmentTab = () => {
       );
       console.log(response.data);
       toast.success("Assignment created successfully");
+      setTimeout(() => {
       setLoading(false);
       window.location.reload();
+      }, 1000);
+      
     } catch (err) {
       console.error(err);
     }
@@ -769,6 +774,7 @@ const CreateAssignmentTab = () => {
                   </label>
                   <input
                     type="Number"
+                    min = "0" 
                     step="any"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={review.reviewMarks}
@@ -869,7 +875,7 @@ const CreateAssignmentTab = () => {
               </label>
               <input
                 type="number"
-                min={minMembers}
+                min="2"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter max members"
                 value={maxMembers}
@@ -1033,14 +1039,57 @@ const AllAssignmentsTab = () => {
   );
 };
 
-// Pending reviews tab content
+
+
+const mockSubjects = ["Math", "Science", "History"];
+const mockAssignments = [
+  { id: 1, title: "Algebra Basics", section: "A", reviews: ["Review 1", "Review 2"] },
+  { id: 2, title: "Physics Lab", section: "B", reviews: ["Review 1"] },
+];
+const mockSubmissions = [
+  {
+    teamName: "Team Alpha",
+    projectTitle: "Equations Solver",
+    leaderName: "Alice",
+    repo: "repo-alpha",
+    status: "graded-manual",
+  },
+  {
+    teamName: "Team Beta",
+    projectTitle: "Motion Tracker",
+    leaderName: "Bob",
+    repo: "repo-beta",
+    status: "graded-ai",
+  },
+  {
+    teamName: "Team Gamma",
+    projectTitle: "Graph Plotter",
+    leaderName: "Charlie",
+    repo: "repo-gamma",
+    status: "not-graded",
+  },
+];
+
+
+
+
 const PendingReviewsTab = () => {
   const [loading, setLoading] = useState(true);
+  const [selectedSubject, setSelectedSubject] = useState(mockSubjects[0]);
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [selectedReview, setSelectedReview] = useState("");
 
   useEffect(() => {
-    // Simulate data fetching
     setTimeout(() => setLoading(false), 1000);
   }, []);
+
+  const handleBack = () => {
+    if (selectedReview) {
+      setSelectedReview("");
+    } else {
+      setSelectedAssignment(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -1049,7 +1098,7 @@ const PendingReviewsTab = () => {
           className="h-12 w-12 border-4 border-gray-200 border-t-blue-600 rounded-full"
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        ></motion.div>
+        />
       </div>
     );
   }
@@ -1061,26 +1110,58 @@ const PendingReviewsTab = () => {
       exit={{ opacity: 0 }}
     >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">
-          Pending Student Submissions
-        </h3>
+        <div className="flex items-center space-x-2">
+          {(selectedAssignment || selectedReview) && (
+            <button
+              onClick={handleBack}
+              className="text-sm text-blue-600 hover:underline flex items-center"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Back
+            </button>
+          )}
+          <h3 className="text-lg font-semibold text-gray-800">
+            {!selectedAssignment
+              ? "Pending Student Submissions"
+              : !selectedReview
+              ? "Select a Review"
+              : "Team Submissions"}
+          </h3>
+        </div>
+
         <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
-          <motion.button
-            className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <select
+            value={selectedSubject}
+            onChange={(e) => setSelectedSubject(e.target.value)}
+            className="px-3 py-1 rounded-md border border-gray-300 text-sm bg-white"
           >
-            <Filter className="h-4 w-4" />
-            <span>Filter</span>
-          </motion.button>
-          <motion.button
-            className="flex items-center space-x-1 bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-md text-sm"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Clock className="h-4 w-4" />
-            <span>Sort by deadline</span>
-          </motion.button>
+            {mockSubjects.map((subj) => (
+              <option key={subj} value={subj}>
+                {subj}
+              </option>
+            ))}
+          </select>
+
+          {!selectedAssignment && (
+            <>
+              <motion.button
+                className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Filter className="h-4 w-4" />
+                <span>Filter</span>
+              </motion.button>
+              <motion.button
+                className="flex items-center space-x-1 bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-md text-sm"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Clock className="h-4 w-4" />
+                <span>Sort by deadline</span>
+              </motion.button>
+            </>
+          )}
         </div>
       </div>
 
@@ -1089,13 +1170,71 @@ const PendingReviewsTab = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-      ></motion.div>
+      >
+        {!selectedAssignment ? (
+          // Assignment list
+          mockAssignments.map((assignment) => (
+            <motion.div
+              key={assignment.id}
+              onClick={() => setSelectedAssignment(assignment)}
+              className="p-4 border rounded-md hover:bg-gray-50 cursor-pointer shadow"
+              whileHover={{ scale: 1.01 }}
+            >
+              <div className="font-semibold text-gray-800">{assignment.title}</div>
+              <div className="text-sm text-gray-600">Section: {assignment.section}</div>
+              <div className="text-sm text-gray-600">
+                {assignment.reviews.length} Review(s) available
+              </div>
+            </motion.div>
+          ))
+        ) : !selectedReview ? (
+          // Review selection
+          <select
+            className="w-full px-3 py-2 rounded-md border border-gray-300 text-sm bg-white"
+            value={selectedReview}
+            onChange={(e) => setSelectedReview(e.target.value)}
+          >
+            <option value="">Select a Review</option>
+            {selectedAssignment.reviews.map((review, index) => (
+              <option key={index} value={review}>
+                {review}
+              </option>
+            ))}
+          </select>
+        ) : (
+          // Submissions list
+          mockSubmissions.map((sub, i) => (
+            <div key={i} className="p-4 border rounded-md shadow-sm bg-white">
+              <div className="font-semibold">{sub.teamName}</div>
+              <div className="text-sm text-gray-600">
+                Project: {sub.projectTitle}
+              </div>
+              <div className="text-sm text-gray-600">
+                Leader: {sub.leaderName}
+              </div>
+              <div className="text-sm text-gray-600">Repo: {sub.repo}</div>
+              <span
+                className={`text-xs px-2 py-1 rounded-full mt-1 inline-block ${
+                  sub.status === "graded-manual"
+                    ? "bg-blue-100 text-blue-700"
+                    : sub.status === "graded-ai"
+                    ? "bg-orange-100 text-orange-700"
+                    : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                {sub.status.replace("-", " ")}
+              </span>
+            </div>
+          ))
+        )}
+      </motion.div>
     </motion.div>
   );
 };
 
 // Main TeacherDashboard Component
 const TeacherDashboard = () => {
+  const [showEditAssignmentModal,setShowEditAssignmentModal] = useState(false);
   const [showPermitReviewModal, setShowPermitReviewModal] = useState(false);
   const [subjects, setSubjects] = useState();
   const [activeTab, setActiveTab] = useState("pending");
@@ -1152,7 +1291,7 @@ const TeacherDashboard = () => {
     <>
       <div className="flex min-h-screen bg-gray-50">
         <Toaster position="top-center" reverseOrder={false} />
-        {/* Overlay for mobile menu */}
+
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
@@ -1456,6 +1595,7 @@ const TeacherDashboard = () => {
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
                       <ActionButton
+                        onClick={()=>{setShowEditAssignmentModal(true)}}
                         icon={<Edit className="h-5 w-5" />}
                         text="Edit Assignment"
                         color="blue"
@@ -1466,7 +1606,6 @@ const TeacherDashboard = () => {
                         color="green"
                         onClick={() => {
                           setShowPermitReviewModal(true);
-                          console.log("clicked");
                         }}
                       />
 
@@ -1663,6 +1802,11 @@ const TeacherDashboard = () => {
               </div>
             </div>
           </div>
+          {showEditAssignmentModal && (
+            <EditAssignmentsModal 
+              setShowEditAssignmentModal1={setShowEditAssignmentModal}
+            />
+          )}
           {showPermitReviewModal && (
             <PermitReviewSubmissionsModal
               setShowSubmissionsModal1={setShowPermitReviewModal}

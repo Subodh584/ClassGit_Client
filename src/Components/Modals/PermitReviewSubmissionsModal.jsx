@@ -145,7 +145,6 @@ const PermitReviewSubmissionsModal = ({ setShowSubmissionsModal1 }) => {
     }
   };
 
-  // Toggle permission for a review
   const togglePermission = (reviewId) => {
     const updatedReviews = reviews.map((review) => {
       if (review.id === reviewId) {
@@ -165,7 +164,7 @@ const PermitReviewSubmissionsModal = ({ setShowSubmissionsModal1 }) => {
     setReviews(updatedReviews);
   };
 
-  // Handle warning confirmation
+
   const handleConfirmWarning = () => {
     // Here you would implement the logic to extend the assignment deadline
     console.log("Final assignment deadline extended");

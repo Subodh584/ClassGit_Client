@@ -185,7 +185,7 @@ const StatCard = ({ value, label, color, icon }) => {
 const AssignmentCard = ({ assignment, setActiveTab2 }) => {
   const [progRatio,setProgRatio] = useState("0/0");
   const navigate = useNavigate();
-  const submissionPercentage = assignment.progress;
+  const [submissionPercentage,setSubmissionPercentage] = useState(0);
   // Function to determine team status badge color
 
   useEffect(() => {
@@ -198,7 +198,9 @@ const AssignmentCard = ({ assignment, setActiveTab2 }) => {
             assId: assignment.id,
           }
         );
+        console.log(response.data);
         setProgRatio(`${response.data[0].reviews_done}/${response.data[0].reviews_total}`);
+        setSubmissionPercentage(response.data[0].progress);
         console.log(response.data[0]);
       } catch (err) {
         console.error(err);
@@ -336,6 +338,7 @@ const AssignmentCard = ({ assignment, setActiveTab2 }) => {
             <span
               className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSubmissionStatusColor(
                 assignment.submissionstatus
+                
               )}`}
             >
               {assignment.submissionstatus === "Submitted" && (
@@ -365,19 +368,19 @@ const AssignmentCard = ({ assignment, setActiveTab2 }) => {
           <span className="text-sm text-gray-600">
             Progress - {progRatio} reviews completed.
           </span>
-          <span className="text-sm text-gray-600">{assignment.progress}%</span>
+          <span className="text-sm text-gray-600">{parseInt(submissionPercentage)}%</span>
         </div>
         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
-            animate={{ width: `${assignment.progress}%` }}
+            animate={{ width: `${submissionPercentage}%` }}
             transition={{ duration: 0.8, ease: "easeOut" }}
             className={`h-full rounded-full ${
-              assignment.progress >= 100
+              submissionPercentage >= 100
                 ? "bg-green-500"
-                : assignment.progress > 60
+                : submissionPercentage > 60
                 ? "bg-blue-500"
-                : assignment.progress > 30
+                : submissionPercentage > 30
                 ? "bg-amber-500"
                 : "bg-red-500"
             }`}
@@ -1525,16 +1528,16 @@ const TeamsTab = () => {
           assignmentId: assignmentId,
         });
 
-        toast.success("Team Created Successfully!");
+        
         setTimeout(() => {
           window.location.reload();
+          toast.success("Team Created Successfully!");
+          setIsSubmitting(false);
         }, 1000);
 
         if (onSubmit) onSubmit();
       } catch (error) {
         toast.error("Failed to create team. Please try again.");
-      } finally {
-        setIsSubmitting(false);
       }
     };
 
@@ -2175,7 +2178,6 @@ const StudentDashboard = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Toaster position="top-center" reverseOrder={false} />
-      {/* Overlay for mobile menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -2189,7 +2191,6 @@ const StudentDashboard = () => {
         )}
       </AnimatePresence>
 
-      {/* Sidebar Navigation - Enhanced with animation */}
       <motion.aside
         className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 shadow-md fixed h-screen z-20"
         initial={{ x: -20, opacity: 0 }}
@@ -2600,7 +2601,7 @@ const StudentDashboard = () => {
           </div>
         </div>
 
-        {/* Footer */}
+
         <footer className="bg-white border-t border-gray-200 mt-auto">
           <div className="container mx-auto px-4 md:px-6 py-4 md:py-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
             <div className="mb-3 md:mb-0"></div>
